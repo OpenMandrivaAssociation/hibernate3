@@ -1,0 +1,34 @@
+--- hibernate-orm-3.6.10.Final/hibernate-infinispan/src/main/java/org/hibernate/cache/infinispan/impl/BaseRegion.java.orig	2012-08-08 12:41:44.619000123 +0200
++++ hibernate-orm-3.6.10.Final/hibernate-infinispan/src/main/java/org/hibernate/cache/infinispan/impl/BaseRegion.java	2012-08-08 12:45:57.434000123 +0200
+@@ -270,7 +270,7 @@
+ 
+    protected boolean handleEvictAllModification(CacheEntryModifiedEvent event) {
+       if (!event.isPre() && (replication || event.isOriginLocal()) && CacheHelper.isEvictAllNotification(event.getKey(), event.getValue())) {
+-         if (log.isTraceEnabled()) log.trace("Set invalid state because marker cache entry was put: {0}", event);
++         if (log.isTraceEnabled()) log.trace("Set invalid state because marker cache entry was put");
+          invalidateState.set(InvalidateState.INVALID);
+          return true;
+       }
+@@ -279,13 +279,13 @@
+ 
+    @CacheEntryInvalidated
+    public void entryInvalidated(CacheEntryInvalidatedEvent event) {
+-      if (log.isTraceEnabled()) log.trace("Cache entry invalidated: {0}", event);
++      if (log.isTraceEnabled()) log.trace("Cache entry invalidated");
+       handleEvictAllInvalidation(event);
+    }
+ 
+    protected boolean handleEvictAllInvalidation(CacheEntryInvalidatedEvent event) {
+       if (!event.isPre() && CacheHelper.isEvictAllNotification(event.getKey())) {
+-         if (log.isTraceEnabled()) log.trace("Set invalid state because marker cache entry was invalidated: {0}", event);
++         if (log.isTraceEnabled()) log.trace("Set invalid state because marker cache entry was invalidated");
+          invalidateState.set(InvalidateState.INVALID);
+          return true;
+       }
+@@ -303,4 +303,4 @@
+       }
+    }
+ 
+-}
+\ No newline at end of file
++}

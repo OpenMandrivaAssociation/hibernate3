@@ -1,0 +1,13 @@
+--- hibernate-orm-3.6.10.Final.orig/hibernate-core/pom.xml	2012-02-08 19:26:33.000000000 -0500
++++ hibernate-orm-3.6.10.Final/hibernate-core/pom.xml	2012-03-14 05:25:30.731287792 -0400
+@@ -119,8 +119,8 @@
+             <version>1.1</version>
+         </dependency>
+         <dependency>
+-            <groupId>org.jboss.javaee</groupId>
+-            <artifactId>jboss-jacc-api_JDK4</artifactId>
++            <groupId>org.jboss.spec.javax.security.jacc</groupId>
++            <artifactId>jboss-jacc-api_1.4_spec</artifactId>
+             <version>1.1.0</version>
+             <scope>provided</scope>
+             <exclusions>
