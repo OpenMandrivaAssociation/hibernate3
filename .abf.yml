@@ -1,11 +1,2 @@
 sources:
   hibernate-orm-3.6.10.Final.tar.xz: 40b102f007fde71f72390d578984da4715db3e8a
-  hibernate3-3.6.10-12.0-omv2014.0.noarch.rpm: 417ee60d067c92dc2c66a1fbfaa631e5a5719c22
-  hibernate3-c3p0-3.6.10-12.0-omv2014.0.noarch.rpm: d2881c9d56a3c80c00a5ed930ff54a61df08afaa
-  hibernate3-ehcache-3.6.10-12.0-omv2014.0.noarch.rpm: 7b515573391889793b8dd95031202b82403ec7f9
-  hibernate3-entitymanager-3.6.10-12.0-omv2014.0.noarch.rpm: 0f36e6c60182c11e41908b5ebe3f45f4556d9c40
-  hibernate3-envers-3.6.10-12.0-omv2014.0.noarch.rpm: 533a0f3eea203f77b29b7ed841ca7352d733c6b9
-  hibernate3-javadoc-3.6.10-12.0-omv2014.0.noarch.rpm: 326db529524c591cc9e92eb6c83b0cbd977afa40
-  hibernate3-jbosscache-3.6.10-12.0-omv2014.0.noarch.rpm: 15af131aba5f40d158cccbc629072e912ee8d2d0
-  hibernate3-proxool-3.6.10-12.0-omv2014.0.noarch.rpm: d635b9b80aeede310cf7ecc556f96b18267c415f
-  hibernate3-testing-3.6.10-12.0-omv2014.0.noarch.rpm: 824340890e7b6ae96a5a104c908cf5d42e512bb2
