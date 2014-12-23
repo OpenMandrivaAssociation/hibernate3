@@ -1,0 +1,21 @@
+diff --git a/hibernate-core/src/main/java/org/hibernate/bytecode/cglib/CglibClassTransformer.java b/hibernate-core/src/main/java/org/hibernate/bytecode/cglib/CglibClassTransformer.java
+index c33f15c..6955f39 100644
+--- a/hibernate-core/src/main/java/org/hibernate/bytecode/cglib/CglibClassTransformer.java
++++ b/hibernate-core/src/main/java/org/hibernate/bytecode/cglib/CglibClassTransformer.java
+@@ -37,6 +37,7 @@ import net.sf.cglib.transform.impl.InterceptFieldFilter;
+ import net.sf.cglib.transform.impl.InterceptFieldTransformer;
+ import net.sf.cglib.core.ClassNameReader;
+ import net.sf.cglib.core.DebuggingClassWriter;
++
+ import org.slf4j.Logger;
+ import org.slf4j.LoggerFactory;
+ import org.hibernate.bytecode.AbstractClassTransformerImpl;
+@@ -80,7 +81,7 @@ public class CglibClassTransformer extends AbstractClassTransformerImpl {
+ 		}
+ 
+ 		String[] names = ClassNameReader.getClassInfo( reader );
+-		ClassWriter w = new DebuggingClassWriter( ClassWriter.COMPUTE_MAXS  );
++		DebuggingClassWriter w = new DebuggingClassWriter( ClassWriter.COMPUTE_MAXS  );
+ 		ClassTransformer t = getClassTransformer( names );
+ 		if ( t != null ) {
+ 			if ( log.isDebugEnabled() ) {

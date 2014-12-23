@@ -7,8 +7,9 @@
 
 Name:    hibernate3
 Version: 3.6.10
-Release: 12.1%{?dist}
+Release: 15.1
 Summary: Relational persistence and query service
+Group:   Development/Java
 License: LGPLv2+
 URL:     http://www.hibernate.org/
 # git clone git://github.com/hibernate/hibernate-orm
@@ -19,6 +20,7 @@ Patch0:  hibernate-orm-fix-cglib-gid.patch
 Patch1:  hibernate-orm-fix-jacc-gid-aid.patch
 Patch2:  hibernate-orm-fix-ant-gid.patch
 Patch3:  hibernate-orm-infinispan-5-support.patch
+Patch4:  hibernate-orm-cglib-3.1.patch
 
 BuildArch: noarch
 
@@ -40,35 +42,21 @@ BuildRequires: proxool
 BuildRequires: hibernate-commons-annotations
 BuildRequires: jboss-servlet-3.0-api
 BuildRequires: ehcache-core
-BuildRequires: jbosscache-core
-BuildRequires: jbosscache-common-parent
-%if 0%{?fedora}
-BuildRequires: infinispan
-%endif
+# jbosscache was retired
+# BuildRequires: jbosscache-core
+# BuildRequires: jbosscache-common-parent
+# H3 dont support infinispan > 5.3.0
+# BuildRequires: infinispan
 BuildRequires: rhq-plugin-annotations
 BuildRequires: h2
-%if 0%{?fedora}
-%if %{fedora} > 19
 BuildRequires: mvn(hsqldb:hsqldb:1)
-%else
-BuildRequires: mvn(hsqldb:hsqldb)
-%endif
-%else
-BuildRequires: mvn(hsqldb:hsqldb:1)
-%endif
+BuildRequires: mvn(org.slf4j:slf4j-log4j12)
 BuildRequires: glassfish-jaxb
 BuildRequires: shrinkwrap
+BuildRequires: jboss-transaction-1.1-api
 
-Requires: java
-Requires: jpackage-utils
-Requires: javapackages-tools >= 0.7.2
-Requires: apache-commons-collections
-Requires: dom4j
-Requires: geronimo-validation
-Requires: hibernate-commons-annotations
-Requires: hibernate-jpa-2.0-api
-Requires: jboss-servlet-3.0-api
-Requires: geronimo-jta
+Obsoletes: %{name}-infinispan < %{version}-%{release}
+Obsoletes: %{name}-jbosscache < %{version}-%{release}
 
 %description
 Hibernate is a powerful, ultra-high performance
@@ -83,69 +71,36 @@ API documentation for %{name}.
 
 %package entitymanager
 Summary: Hibernate Entity Manager
-Requires: cglib
-Requires: %{name} = %{version}-%{release}
-Requires: hibernate-jpa-2.0-api
-Requires: hibernate-validator
-Requires: javassist
 
 %description entitymanager
 %{summary}.
 
 %package envers
 Summary: Hibernate support for entity auditing
-Requires: hibernate-commons-annotations
-Requires: hibernate-jpa-2.0-api
-Requires: %{name} = %{version}-%{release}
-Requires: %{name}-entitymanager = %{version}-%{release}
 
 %description envers
 %{summary}.
 
 %package c3p0
 Summary: C3P0-based implementation of Hibernate ConnectionProvider
-Requires: %{name} = %{version}-%{release}
-Requires: c3p0
 
 %description c3p0
 %{summary}.
 
 %package proxool
 Summary: Proxool-based implementation of Hibernate ConnectionProvder
-Requires: %{name} = %{version}-%{release}
 
 %description proxool
 %{summary}.
 
 %package ehcache
 Summary: Integration of Hibernate with Ehcache
-Requires: %{name} = %{version}-%{release}
-Requires: ehcache-core
 
 %description ehcache
 %{summary}.
 
-%package jbosscache
-Summary: Integration of hibernate with jbosscache
-Requires: %{name} = %{version}-%{release}
-Requires: jbosscache-core
-
-%description jbosscache
-%{summary}.
-
-%if 0%{?fedora}
-%package infinispan
-Summary: Integration of Hibernate with Infinispan
-Requires: infinispan
-
-%description infinispan
-%{summary}.
-%endif
-
 %package testing
 Summary: Hibernate JUnit test utilities
-Requires: %{name} = %{version}-%{release}
-Requires: junit
 
 %description testing
 %{summary}.
@@ -155,7 +110,8 @@ Requires: junit
 %patch0 -p1
 %patch1 -p1
 %patch2 -p1
-%patch3 -p1
+#%%patch3 -p1
+%patch4 -p1
 
 %pom_remove_plugin org.jboss.maven.plugins:maven-jdocbook-plugin hibernate-parent
 %pom_remove_plugin org.jboss.maven.plugins:maven-jdocbook-style-plugin hibernate-parent
@@ -165,13 +121,12 @@ Requires: junit
 %pom_disable_module hibernate-swarmcache
 %pom_disable_module hibernate-jdbc3-testing
 %pom_disable_module hibernate-jdbc4-testing
-%if 0%{?fedora}
-%else
-%pom_disable_module hibernate-infinispan
-%endif
 
-# Remove test deps
-for m in envers infinispan entitymanager jbosscache ehcache; do
+%pom_disable_module hibernate-infinispan
+%pom_disable_module hibernate-jbosscache
+
+# Remove test deps infinispan jbosscache
+for m in envers entitymanager ehcache; do
 %pom_xpath_remove "pom:dependencies/pom:dependency[pom:scope = 'test']" hibernate-${m}/pom.xml
 done
 
@@ -185,7 +140,7 @@ rm -r hibernate-envers/src/main/java/org/hibernate/tool/ant/*.java \
   hibernate-envers/src/main/java/org/hibernate/envers/ant/*.java
 
 # Make hibernate-testing back a test dependency...
-sed -i "s|<!-- <scope>test</scope> TODO fix this -->|<scope>test</scope>|" hibernate-infinispan/pom.xml
+#sed -i "s|<!-- <scope>test</scope> TODO fix this -->|<scope>test</scope>|" hibernate-infinispan/pom.xml
 
 # Fix the c3p0 gid
 %pom_xpath_set "pom:project/pom:dependencies/pom:dependency[pom:artifactId = 'c3p0' ]/pom:groupId" com.mchange  hibernate-c3p0
@@ -200,9 +155,18 @@ sed -i "s|<groupId>javax.validation|<groupId>org.apache.geronimo.specs|" ${f}/po
 sed -i "s|<artifactId>validation-api|<artifactId>geronimo-validation_1.0_spec|" ${f}/pom.xml
 done
 
+sed -i "s|<groupId>javax.transaction|<groupId>org.jboss.spec.javax.transaction|" hibernate-core/pom.xml
+sed -i "s|<artifactId>jta|<artifactId>jboss-transaction-api_1.1_spec|" hibernate-core/pom.xml
+sed -i "s|<version>1.1</version>|<version>1.0.1.Final</version>|" hibernate-core/pom.xml
+
 %pom_xpath_set "pom:project/pom:dependencyManagement/pom:dependencies/pom:dependency[pom:artifactId = 'hibernate-commons-annotations' ]/pom:groupId" org.hibernate.common  hibernate-parent
 
 sed -i "s,59 Temple Place,51 Franklin Street,;s,Suite 330,Fifth Floor,;s,02111-1307,02110-1301," lgpl.txt
+
+%mvn_compat_version : %{majorversion} %{namedversion}
+%mvn_package ":hibernate-parent" %{name}
+%mvn_package ":hibernate-core" %{name}
+%mvn_package ":hibernate" __noinstall
 
 %build
 
@@ -210,158 +174,46 @@ sed -i "s,59 Temple Place,51 Franklin Street,;s,Suite 330,Fifth Floor,;s,02111-1
 # "Unable to get the default Bean Validation factory"
 export jdk16_home=/usr
 export LANG=en_US.UTF-8
-mvn-rpmbuild \
-  -Dmaven.local.depmap.file=%{SOURCE1} \
-  -DdisableDistribution=true \
-  -Dmaven.test.skip=true \
-  package \
-  javadoc:aggregate
+%mvn_build -s -f -- -DdisableDistribution=true
 
 %install
+%mvn_install
 
-# POM files:
-install -d -m 755 %{buildroot}%{_mavenpomdir}
-
-install -pm 644 hibernate-parent/pom.xml  %{buildroot}%{_mavenpomdir}/JPP-%{name}-parent.pom
-
-%add_maven_depmap JPP-%{name}-parent.pom -v "%{majorversion},%{namedversion}"
-
-# Jar files:
-install -d -m 755 %{buildroot}%{_javadir}/%{name}
-
-install -m 644 hibernate-core/target/hibernate-core-%{namedversion}.jar %{buildroot}%{_javadir}/%{name}/hibernate-core.jar
-install -pm 644 hibernate-core/pom.xml %{buildroot}%{_mavenpomdir}/JPP.%{name}-hibernate-core.pom
-
-%add_maven_depmap JPP.%{name}-hibernate-core.pom %{name}/hibernate-core.jar -v "%{majorversion},%{namedversion}"
-
-%if 0%{?fedora}
-for module in c3p0 ehcache infinispan jbosscache proxool \
-%else
-for module in c3p0 ehcache jbosscache proxool \
-%endif
-              entitymanager envers testing; do
-    install -m 644 hibernate-${module}/target/hibernate-${module}-%{namedversion}.jar %{buildroot}%{_javadir}/%{name}/hibernate-${module}.jar
-    install -pm 644 hibernate-${module}/pom.xml %{buildroot}%{_mavenpomdir}/JPP.%{name}-hibernate-${module}.pom
-%add_maven_depmap JPP.%{name}-hibernate-${module}.pom %{name}/hibernate-${module}.jar -f ${module} -v "%{majorversion},%{namedversion}"
-done
-
-# Javadoc files:
-install -d -m 755 %{buildroot}%{_javadocdir}/%{name}
-cp -rp target/site/apidocs/* %{buildroot}%{_javadocdir}/%{name}
-%if 0%{?fedora}
-%else
-    for jar in core entitymanager envers c3p0 ehcache proxool jbosscache testing; do
-        ln -sf hibernate-${jar}.jar %{buildroot}%{_javadir}/%{name}/hibernate-${jar}-%{version}.jar
-    done
-    for pom in parent; do
-      ln -sf JPP-%{name}-${pom}.pom %{buildroot}%{_mavenpomdir}/JPP-%{name}-${pom}-%{version}.pom
-    done
-    for pom in core entitymanager envers c3p0 ehcache proxool jbosscache testing; do
-        ln -sf JPP.%{name}-hibernate-${pom}.pom %{buildroot}%{_mavenpomdir}/JPP.%{name}-hibernate-${pom}-%{version}.pom
-    done
-%endif
-
-%files
+%files -f .mfiles-%{name}
 %doc changelog.txt lgpl.txt
 %dir %{_javadir}/%{name}
-%{_javadir}/%{name}/hibernate-core-%{version}.jar
-%{_javadir}/%{name}/hibernate-core-%{majorversion}.jar
-%{_javadir}/%{name}/hibernate-core-%{namedversion}.jar
-%{_mavenpomdir}/JPP-%{name}-parent-%{version}.pom
-%{_mavenpomdir}/JPP-%{name}-parent-%{majorversion}.pom
-%{_mavenpomdir}/JPP-%{name}-parent-%{namedversion}.pom
-%{_mavenpomdir}/JPP.%{name}-hibernate-core-%{version}.pom
-%{_mavenpomdir}/JPP.%{name}-hibernate-core-%{majorversion}.pom
-%{_mavenpomdir}/JPP.%{name}-hibernate-core-%{namedversion}.pom
-%{_mavendepmapfragdir}/%{name}
 
-%files javadoc
+%files javadoc -f .mfiles-javadoc
 %doc lgpl.txt
-%{_javadocdir}/%{name}
 
-%files entitymanager
+%files entitymanager -f .mfiles-hibernate-entitymanager
 %doc lgpl.txt
-%{_javadir}/%{name}/hibernate-entitymanager-%{version}.jar
-%{_javadir}/%{name}/hibernate-entitymanager-%{majorversion}.jar
-%{_javadir}/%{name}/hibernate-entitymanager-%{namedversion}.jar
-%{_mavenpomdir}/JPP.%{name}-hibernate-entitymanager-%{version}.pom
-%{_mavenpomdir}/JPP.%{name}-hibernate-entitymanager-%{majorversion}.pom
-%{_mavenpomdir}/JPP.%{name}-hibernate-entitymanager-%{namedversion}.pom
-%{_mavendepmapfragdir}/%{name}-entitymanager
 
-%files envers
+%files envers -f .mfiles-hibernate-envers
 %doc lgpl.txt
-%{_javadir}/%{name}/hibernate-envers-%{version}.jar
-%{_javadir}/%{name}/hibernate-envers-%{majorversion}.jar
-%{_javadir}/%{name}/hibernate-envers-%{namedversion}.jar
-%{_mavenpomdir}/JPP.%{name}-hibernate-envers-%{version}.pom
-%{_mavenpomdir}/JPP.%{name}-hibernate-envers-%{majorversion}.pom
-%{_mavenpomdir}/JPP.%{name}-hibernate-envers-%{namedversion}.pom
-%{_mavendepmapfragdir}/%{name}-envers
 
-%files c3p0
+%files c3p0 -f .mfiles-hibernate-c3p0
 %doc lgpl.txt
-%{_javadir}/%{name}/hibernate-c3p0-%{version}.jar
-%{_javadir}/%{name}/hibernate-c3p0-%{majorversion}.jar
-%{_javadir}/%{name}/hibernate-c3p0-%{namedversion}.jar
-%{_mavenpomdir}/JPP.%{name}-hibernate-c3p0-%{version}.pom
-%{_mavenpomdir}/JPP.%{name}-hibernate-c3p0-%{majorversion}.pom
-%{_mavenpomdir}/JPP.%{name}-hibernate-c3p0-%{namedversion}.pom
-%{_mavendepmapfragdir}/%{name}-c3p0
 
-%files ehcache
+%files ehcache -f .mfiles-hibernate-ehcache
 %doc lgpl.txt
-%{_javadir}/%{name}/hibernate-ehcache-%{version}.jar
-%{_javadir}/%{name}/hibernate-ehcache-%{majorversion}.jar
-%{_javadir}/%{name}/hibernate-ehcache-%{namedversion}.jar
-%{_mavenpomdir}/JPP.%{name}-hibernate-ehcache-%{version}.pom
-%{_mavenpomdir}/JPP.%{name}-hibernate-ehcache-%{majorversion}.pom
-%{_mavenpomdir}/JPP.%{name}-hibernate-ehcache-%{namedversion}.pom
-%{_mavendepmapfragdir}/%{name}-ehcache
 
-%if 0%{?fedora}
-%files infinispan
+%files proxool -f .mfiles-hibernate-proxool
 %doc lgpl.txt
-%{_javadir}/%{name}/hibernate-infinispan-%{version}.jar
-%{_javadir}/%{name}/hibernate-infinispan-%{majorversion}.jar
-%{_javadir}/%{name}/hibernate-infinispan-%{namedversion}.jar
-%{_mavenpomdir}/JPP.%{name}-hibernate-infinispan-%{version}.pom
-%{_mavenpomdir}/JPP.%{name}-hibernate-infinispan-%{majorversion}.pom
-%{_mavenpomdir}/JPP.%{name}-hibernate-infinispan-%{namedversion}.pom
-%{_mavendepmapfragdir}/%{name}-infinispan
-%endif
 
-%files proxool
+%files testing -f .mfiles-hibernate-testing
 %doc lgpl.txt
-%{_javadir}/%{name}/hibernate-proxool-%{version}.jar
-%{_javadir}/%{name}/hibernate-proxool-%{majorversion}.jar
-%{_javadir}/%{name}/hibernate-proxool-%{namedversion}.jar
-%{_mavenpomdir}/JPP.%{name}-hibernate-proxool-%{version}.pom
-%{_mavenpomdir}/JPP.%{name}-hibernate-proxool-%{majorversion}.pom
-%{_mavenpomdir}/JPP.%{name}-hibernate-proxool-%{namedversion}.pom
-%{_mavendepmapfragdir}/%{name}-proxool
-
-%files jbosscache
-%doc lgpl.txt
-%{_javadir}/%{name}/hibernate-jbosscache-%{version}.jar
-%{_javadir}/%{name}/hibernate-jbosscache-%{majorversion}.jar
-%{_javadir}/%{name}/hibernate-jbosscache-%{namedversion}.jar
-%{_mavenpomdir}/JPP.%{name}-hibernate-jbosscache-%{version}.pom
-%{_mavenpomdir}/JPP.%{name}-hibernate-jbosscache-%{majorversion}.pom
-%{_mavenpomdir}/JPP.%{name}-hibernate-jbosscache-%{namedversion}.pom
-%{_mavendepmapfragdir}/%{name}-jbosscache
-
-%files testing
-%doc lgpl.txt
-%{_javadir}/%{name}/hibernate-testing-%{version}.jar
-%{_javadir}/%{name}/hibernate-testing-%{majorversion}.jar
-%{_javadir}/%{name}/hibernate-testing-%{namedversion}.jar
-%{_mavenpomdir}/JPP.%{name}-hibernate-testing-%{version}.pom
-%{_mavenpomdir}/JPP.%{name}-hibernate-testing-%{majorversion}.pom
-%{_mavenpomdir}/JPP.%{name}-hibernate-testing-%{namedversion}.pom
-%{_mavendepmapfragdir}/%{name}-testing
 
 %changelog
+* Thu Jun 26 2014 gil cattaneo <puntogil@libero.it> 3.6.10-15
+- disable jbosscache support
+
+* Sat Jun 07 2014 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 3.6.10-14
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_21_Mass_Rebuild
+
+* Fri Mar 28 2014 Michael Simacek <msimacek@redhat.com> - 3.6.10-13
+- Use Requires: java-headless rebuild (#1067528)
+
 * Sat Sep 14 2013 gil cattaneo <puntogil@libero.it> 3.6.10-12
 - rebuilt with new hibernate-commons-annotations
 - fix validation-api gId:aId
@@ -406,3 +258,4 @@ cp -rp target/site/apidocs/* %{buildroot}%{_javadocdir}/%{name}
 
 * Wed Mar 14 2012 Andy Grimm <agrimm@gmail.com> - 3.6.10-1
 - Initial package
+
