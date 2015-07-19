@@ -7,7 +7,7 @@
 
 Name:    hibernate3
 Version: 3.6.10
-Release: 15.1
+Release: 15.2
 Summary: Relational persistence and query service
 Group:   Development/Java
 License: LGPLv2+
