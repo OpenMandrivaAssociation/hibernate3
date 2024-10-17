@@ -11,7 +11,7 @@ Release: 15.3
 Summary: Relational persistence and query service
 Group:   Development/Java
 License: LGPLv2+
-URL:     http://www.hibernate.org/
+URL:     https://www.hibernate.org/
 # git clone git://github.com/hibernate/hibernate-orm
 # cd hibernate-orm/ && git archive --format=tar --prefix=hibernate-orm-3.6.10.Final/ 3.6.10.Final | xz > hibernate-3.6.10.Final.tar.xz
 Source0: hibernate-orm-3.6.10.Final.tar.xz
